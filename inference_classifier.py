@@ -19,7 +19,7 @@ mp_drawing_styles = mp.solutions.drawing_styles
 
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-# Label dictionary
+# Label dictionary 
 labels_dict = {
     0: 'A',
     1: 'B',
@@ -54,20 +54,22 @@ labels_dict = {
 
 # Game settings
 score = 0
-time_limit = 30  # seconds
+time_limit = 60  # seconds
 start_time = time.time()
 
-# Function to display a random target letter
+# Get random letter to learn 
 def get_random_letter():
     return random.choice(list(labels_dict.values())[:26])  # Only letters A-Z
 
 # Start the game
 target_letter = get_random_letter()
+last_correct_time = None
+correct_feedback_duration = 2  # Duration to stay green (in seconds)
 
 while True:
-    data_aux = []
-    x_ = []
-    y_ = []
+    data_aux = [] # stores the normalized coordinate pairs
+    x_ = [] # for all x coordinates of landmarks
+    y_ = [] # for all y coordinates of landmarks
 
     ret, frame = cap.read()
     H, W, _ = frame.shape
@@ -75,6 +77,8 @@ while True:
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     results = hands.process(frame_rgb)
+
+    feedback_color = (255, 255, 255)  # Default to white 
 
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
@@ -85,17 +89,20 @@ while True:
                 mp_drawing_styles.get_default_hand_landmarks_style(),
                 mp_drawing_styles.get_default_hand_connections_style())
 
-            for i in range(len(hand_landmarks.landmark)):
-                x = hand_landmarks.landmark[i].x
-                y = hand_landmarks.landmark[i].y
-                x_.append(x)
-                y_.append(y)
+            # Get the normalized coordinates of hand landmarks detected by MediaPipe
+            # 1) Find the minimum of the x and y coordinates of the hand: 
+            for landmark in hand_landmarks.landmark:
+                x_.append(landmark.x)
+                y_.append(landmark.y)
+            min_x = min(x_)
+            min_y = min(y_)
 
-            for i in range(len(hand_landmarks.landmark)):
-                x = hand_landmarks.landmark[i].x
-                y = hand_landmarks.landmark[i].y
-                data_aux.append(x - min(x_))
-                data_aux.append(y - min(y_))
+            # 2) Make data relative to x and y coordinates of the hand, so normalizing it 
+            for landmark in hand_landmarks.landmark:
+                x = landmark.x
+                y = landmark.y
+                data_aux.append(x - min_x)
+                data_aux.append(y - min_y)
 
             # Ensure data_aux has the expected feature size (84 features)
             required_size = 84
@@ -107,30 +114,34 @@ while True:
             prediction = model.predict([np.asarray(data_aux)])
             predicted_character = labels_dict[int(prediction[0])]
 
-            # Check if the predicted character matches the target letter
+            # Set feedback color based on correctness
             if predicted_character == target_letter:
+                feedback_color = (0, 255, 0)  # Green for correct
                 score += 1
                 target_letter = get_random_letter()  # Generate a new target letter
+            else:
+                feedback_color = (0, 0, 255)  # Red for incorrect
 
-    # Display target letter, score, and remaining time
     remaining_time = time_limit - int(time.time() - start_time)
     font = cv2.FONT_HERSHEY_SIMPLEX  
     thickness = 3  # Bold effect
 
+    # Display target letter with feedback border
     target_text = f"Target: {target_letter}"
     target_size = cv2.getTextSize(target_text, font, 1.2, thickness)[0]
     target_x = (W - target_size[0]) // 2
     target_y = 70
 
-    # Target
+    # Draw feedback border and background
+    cv2.rectangle(frame, (target_x - 20, target_y - 50), (target_x + target_size[0] + 20, target_y + 20), feedback_color, 5)
     cv2.rectangle(frame, (target_x - 10, target_y - 40), (target_x + target_size[0] + 10, target_y + 10), (255, 255, 255), -1)
     cv2.putText(frame, target_text, (target_x, target_y), font, 1.2, (0, 0, 0), thickness)
 
-    # Score
+    # Draw white rectangle background for "Score"
     cv2.rectangle(frame, (10, 20), (300, 80), (255, 255, 255), -1)
     cv2.putText(frame, f"Score: {score}", (20, 50), font, 1.2, (0, 0, 0), thickness)
 
-    # Time remaining
+    # Draw white rectangle background for "Time"
     cv2.rectangle(frame, (10, 80), (300, 140), (255, 255, 255), -1)
     cv2.putText(frame, f"Time: {remaining_time}s", (20, 110), font, 1.2, (0, 0, 0), thickness)
 

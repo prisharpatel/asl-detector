@@ -10,9 +10,12 @@ for dir_ in os.listdir(DATA_DIR):
     dir_path = os.path.join(DATA_DIR, dir_)
     if not os.path.isdir(dir_path):  # Skip non-directory files like .DS_Store
         continue
-
+    
+    images = []
     # Get the list of image files in the current folder
-    images = [img for img in os.listdir(dir_path) if img.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    for img in os.listdir(dir_path):
+        if img.lower().endswith(('.png', '.jpg', '.jpeg')): 
+            images.append(img)
 
     # Calculate the number of images to delete (75%)
     num_to_delete = int(len(images) * 0.75)
