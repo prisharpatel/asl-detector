@@ -1,4 +1,4 @@
-This project was inspired by research done at [Georgia Tech][(https://faculty.cc.gatech.edu/~thad/p/030_30_AC/idc05_final.pdf] on ASL and computer vision. 
+This project was inspired by research done at [Georgia Tech](https://faculty.cc.gatech.edu/~thad/p/030_30_AC/idc05_final.pdf) on ASL and computer vision. 
 By creating a game to learn ASL, this project provides independence to ASL users so they can communicate without an interpreter and makes learning ASL accessible for everyone. 
 
 This is the approach we used to create the game: 
