@@ -4,7 +4,7 @@ By creating a game to learn ASL, this project provides independence to ASL users
 This is the approach we used to create the game: 
 1. Created dataset that used Mediapipe to normalize, extract, and draw hand landmarks on images
 
-2. Trained Random Forest model over this dataset
+2. Trained model over this dataset
 
 3. Used OpenCV to connect to webcam and process the video input
 
